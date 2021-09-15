@@ -8,7 +8,10 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
+
 const PORT = process.env.PORT;
+app.use(express.json());
+
 
 // Mongo DB
 const mongoose = require('mongoose');
@@ -65,6 +68,9 @@ async function seedData() {
 // Routes
 app.get('/', homeHandler);
 app.get('/getbooks', bookHandler);
+app.post('/addBook', addBookHandler);
+app.delete('/removeBooks/:id', deleteBookHandler);
+app.put('/updateBooks/:id', updateBookHandler);
 
 // Functions Handlers
 function homeHandler(req, res) {
@@ -74,11 +80,11 @@ function homeHandler(req, res) {
 function bookHandler (req,res){
   // send fav books related to the user email
   const email = req.query.email;
-  console.log('hello');
-  console.log(email);
+  // console.log('hello');
+  // console.log(email);
 
   Modelbook.find({ownerEmail:email},(err,result) => {
-    console.log(result);
+    // console.log(result);
     if (err) {
       console.log(err);
     }
@@ -88,6 +94,57 @@ function bookHandler (req,res){
   });
 };
 
+async function addBookHandler (req,res){
+  // add data that comes from front end
+  console.log(req.body);
+  // console.log('hellooo');
+  const {bookTitle, bookDescription, bookStatus , ownerEmail}=req.body;
+
+  await Modelbook.create({
+    bookTitle: bookTitle,
+    bookDescription: bookDescription,
+    bookStatus: bookStatus,
+    ownerEmail: ownerEmail,
+  })
+  Modelbook.find({ownerEmail:ownerEmail}, (err,result) => {
+    if (err){
+      console.log(err);
+    }
+    else{
+      res.send(result);
+    }
+  })
+}
+
+function deleteBookHandler (req,res) {
+  const bookId = req.params.id;
+  const email = req.query.email;
+
+  Modelbook.find({ownerEmail:email}, (err,result) => {
+    if (err) {
+      console.log(err);
+    }
+    else {
+      res.send(result);
+    };
+  });
+};
+
+function updateBookHandler (req,res) {
+  const id = req.params.id;
+  const {bookTitle, bookDescription, bookStatus, ownerEmail} = req.body;
+  
+  Modelbook.findByIdAndUpdate(id,{bookTitle,bookDescription, bookStatus,ownerEmail} ,(err,result) => {
+    Modelbook.find({ownerEmail:email}, (err,result) => {
+      if (err){
+        console.log(err);
+      }
+      else {
+        res.send(result);
+      }
+    })
+  })
+}
 
 app.listen(PORT, () => {
   console.log(`listening on ${PORT}`)
